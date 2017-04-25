@@ -1,0 +1,12 @@
+---
+sudo: required
+dist: trusty
+
+script:
+    - pip install -r requirements.yml
+    - python -m tests/test_s3_multipart_uploader
+
+notifications:
+    email:
+        on_success: change
+        on_failure: change
