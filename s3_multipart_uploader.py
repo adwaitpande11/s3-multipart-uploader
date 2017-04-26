@@ -66,6 +66,8 @@ def upload_file_pieces(
     upload_id = create_mpu_response['UploadId']
 
     fileparts = {'Parts': []}
+
+    complete_mpu_response = {}
     try:
         for index, file_piece_name in enumerate(file_piece_names):
             part_num = index + 1
@@ -94,18 +96,21 @@ def upload_file_pieces(
             })
         print("Finished uploading.")
 
-        s3.complete_multipart_upload(
+        complete_mpu_response = s3.complete_multipart_upload(
             Bucket=bucket_name,
             Key=key,
             UploadId=upload_id,
             MultipartUpload=fileparts,
         )
-    except Exception as e:
-        print('ERROR! Aborting multipart upload...')
-        s3.abort_multipart_upload(
-            Bucket=bucket_name, Key=key, UploadId=upload_id)
-        print('Upload aborted.')
-        raise e
+    finally:
+        if 'ETag' not in complete_mpu_response:
+            print(
+                "Exiting program and the upload is incomplete. Aborting "
+                "multipart upload..."
+            )
+            s3.abort_multipart_upload(
+                Bucket=bucket_name, Key=key, UploadId=upload_id)
+            print('Upload aborted.')
 
     head_object_response = s3.head_object(Bucket=bucket_name, Key=key)
     assertions = (
