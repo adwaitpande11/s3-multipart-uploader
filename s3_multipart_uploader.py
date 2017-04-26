@@ -3,6 +3,7 @@
 # License: MIT.
 import argparse
 import base64
+from functools import partial
 import hashlib
 import math
 import os
@@ -19,8 +20,12 @@ DEFAULT_FILE_PIECE_SIZE = 10*1024*1024
 
 def get_file_hash(filename, algorithm='md5'):
     """Linux equivalent: openssl <algorithm> -binary <filename> | base64"""
+    hash_obj = getattr(hashlib, algorithm)()
     with open(filename, 'rb') as file_:
-        file_hash = getattr(hashlib, algorithm)(file_.read()).digest()
+        read_chunk = partial(file_.read, hash_obj.block_size * 1024)
+        for chunk in iter(read_chunk, ''):
+            hash_obj.update(chunk)
+    file_hash = hash_obj.digest()
     file_hash = base64.b64encode(file_hash).decode()
     return file_hash
 
