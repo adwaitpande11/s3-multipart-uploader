@@ -64,6 +64,7 @@ def upload_file_pieces(
         Metadata={'md5': expected_complete_file_hash},
     )
     upload_id = create_mpu_response['UploadId']
+    print("Upload id: %s" % upload_id)
 
     fileparts = {'Parts': []}
 
