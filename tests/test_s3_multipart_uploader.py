@@ -20,13 +20,13 @@ class TestS3MultipartUploader(unittest.TestCase):
 
     # 50 bytes
     SMALL_TESTFILE_CONTENT = "+ELokXtvOjByfb92hqVRE74SOaA0B2AS3iwtPkjv74HTY76sqt"
-    SMALL_TESTFILE_PATH = os.path.join(os.curdir, 'tests', 'small_testfile')
+    SMALL_TESTFILE_PATH = os.path.join(os.curdir, 'small_testfile')
 
     BIG_TESTFILE_SIZE = 6*1024*1024
-    BIG_TESTFILE_PATH = os.path.join(os.curdir, 'tests', 'big_testfile')
+    BIG_TESTFILE_PATH = os.path.join(os.curdir, 'big_testfile')
 
     def setUp(self):
-        testfile = open(self.SMALL_TESTFILE_PATH, 'wb')
+        testfile = open(self.SMALL_TESTFILE_PATH, 'w')
         testfile.write(self.SMALL_TESTFILE_CONTENT)
 
     def tearDown(self):
@@ -91,6 +91,7 @@ class TestS3MultipartUploader(unittest.TestCase):
                 original_filename=self.BIG_TESTFILE_PATH,
                 file_piece_size=5*1024*1024 + 100,
                 keep_file_pieces=False,
+                storage_class='STANDARD'
             )
 
             key = os.path.basename(self.BIG_TESTFILE_PATH)
