@@ -3,7 +3,6 @@
 # License: MIT.
 import argparse
 import base64
-from functools import partial
 import hashlib
 import math
 import os
@@ -15,15 +14,14 @@ import boto3
 
 # File piece size should be at least 5*1024*1024 bytes (5 MB).
 # See: https://docs.aws.amazon.com/AmazonS3/latest/API/mpUploadComplete.html#errorCompleteMPU
-DEFAULT_FILE_PIECE_SIZE = 10*1024*1024
+DEFAULT_FILE_PIECE_SIZE = 10 * 1024 * 1024
 
 
 def get_file_hash(filename, algorithm='md5'):
     """Linux equivalent: openssl <algorithm> -binary <filename> | base64"""
     hash_obj = getattr(hashlib, algorithm)()
     with open(filename, 'rb') as file_:
-        read_chunk = partial(file_.read, hash_obj.block_size * 1024)
-        for chunk in iter(read_chunk, ''):
+        for chunk in iter(lambda: file_.read(1024), b""):
             hash_obj.update(chunk)
     file_hash = hash_obj.digest()
     file_hash = base64.b64encode(file_hash).decode()
@@ -40,7 +38,7 @@ def split_input_file(input_filename, temp_dir, file_piece_size):
                 temp_dir,
                 '.'.join((
                     os.path.basename(input_filename),
-                    str(index+1).zfill(len(str(num_file_pieces))),
+                    str(index + 1).zfill(len(str(num_file_pieces))),
                 )),
             )
             with open(this_file_piece_name, 'wb') as this_file_piece:
@@ -54,14 +52,15 @@ def upload_file_pieces(
         key,
         expected_complete_file_hash,
         expected_complete_file_size,
-        file_piece_names):
-
+        file_piece_names,
+        storage_class):
     s3 = boto3.client('s3')
 
     create_mpu_response = s3.create_multipart_upload(
         Bucket=bucket_name,
         Key=key,
         Metadata={'md5': expected_complete_file_hash},
+        StorageClass=storage_class,
     )
     upload_id = create_mpu_response['UploadId']
     print("Upload id: %s" % upload_id)
@@ -128,13 +127,13 @@ def upload_file_pieces(
     )
     for assertion in assertions:
         assert assertion['expected'] == assertion['found'], \
-               "Failed check '%s'!" % assertion['description']
+            "Failed check '%s'!" % assertion['description']
         print("Passed check '%s'." % assertion['description'])
     print('Upload successful!')
 
 
 def upload_file(
-        bucket_name, original_filename, file_piece_size, keep_file_pieces):
+        bucket_name, original_filename, file_piece_size, keep_file_pieces, storage_class):
     temp_dir = tempfile.mkdtemp()
     try:
         file_piece_names = split_input_file(
@@ -149,6 +148,7 @@ def upload_file(
             expected_complete_file_hash=get_file_hash(original_filename),
             expected_complete_file_size=os.path.getsize(original_filename),
             file_piece_names=file_piece_names,
+            storage_class=storage_class,
         )
     finally:
         if not keep_file_pieces:
@@ -191,10 +191,16 @@ if __name__ == '__main__':
         action='store_true',
         help='keep file pieces after program is finished',
     )
+    parser.add_argument(
+        '--storage-class',
+        default='STANDARD',
+        help='s3 storage class for the file. Possible values - STANDARD|REDUCED_REDUNDANCY|STANDARD_IA|ONEZONE_IA|INTELLIGENT_TIERING|GLACIER|DEEP_ARCHIVE',
+    )
     args = parser.parse_args()
     upload_file(
         args.bucket_name,
         args.original_filename,
         args.file_piece_size,
         args.keep_file_pieces,
+        args.storage_class,
     )
