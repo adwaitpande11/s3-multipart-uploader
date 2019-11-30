@@ -194,7 +194,7 @@ if __name__ == '__main__':
     parser.add_argument(
         '--storage-class',
         default='STANDARD',
-        help='s3 storage class for the file. Possible values - STANDARD|REDUCED_REDUNDANCY|STANDARD_IA|ONEZONE_IA|INTELLIGENT_TIERING|GLACIER|DEEP_ARCHIVE',
+        help='s3 storage class for the file. Possible values - STANDARD | REDUCED_REDUNDANCY | STANDARD_IA | ONEZONE_IA | INTELLIGENT_TIERING | GLACIER | DEEP_ARCHIVE',
     )
     args = parser.parse_args()
     upload_file(
