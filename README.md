@@ -4,6 +4,9 @@
 
 A Python program using boto3 that does a multipart file upload to AWS S3 with file integrity checking. It approximates the instructions at https://aws.amazon.com/premiumsupport/knowledge-center/s3-multipart-upload-cli/ .
 
+## Usage
+python .\s3_multipart_uploader.py bucket-name=adwaits-archive original-filename=yourfile.zip --storage-class=DEEP_ARCHIVE
+
 ## Author
 
 [Jeremy Nation](https://jeremynation.me).
